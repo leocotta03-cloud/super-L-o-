@@ -1,1 +1,781 @@
-# super-L-o-
+# super-L-o-<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Super Léo - Sauveur de la Planète</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* UI Générale */
+        .ui-layer {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #ui {
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        #assistantStatus {
+            top: 10px;
+            right: 10px;
+            color: #00ff88;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        #message {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+            display: none;
+            padding: 20px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            z-index: 20;
+        }
+
+        /* Menu Principal */
+        #mainMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 12, 41, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        .menu-title {
+            font-size: 48px;
+            color: #00d4ff;
+            text-shadow: 0 0 20px #00d4ff;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .menu-subtitle {
+            font-size: 20px;
+            color: #aaa;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+        .mode-btn {
+            width: 300px;
+            padding: 20px;
+            margin: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+        }
+        .mode-btn:hover {
+            transform: scale(1.05);
+        }
+        .mode-relax {
+            background: linear-gradient(45deg, #00b894, #00cec9);
+            box-shadow: 0 0 20px rgba(0, 184, 148, 0.5);
+        }
+        .mode-classic {
+            background: linear-gradient(45deg, #e17055, #d63031);
+            box-shadow: 0 0 20px rgba(225, 112, 85, 0.5);
+        }
+        .mode-desc {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            margin-top: 8px;
+            font-weight: normal;
+            display: block;
+            font-style: italic;
+        }
+
+        /* Contrôles Style Roblox */
+        .joystick-zone {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 120px;
+            height: 120px;
+            z-index: 30;
+            touch-action: none;
+            pointer-events: auto;
+        }
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            position: relative;
+            backdrop-filter: blur(2px);
+        }
+        .joystick-stick {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 212, 255, 0.8);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        .jump-btn {
+            position: absolute;
+            bottom: 50px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 68, 68, 0.6);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            z-index: 30;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+            pointer-events: auto;
+        }
+        .jump-btn:active {
+            background: rgba(255, 68, 68, 0.9);
+            transform: scale(0.95);
+        }
+
+        /* Bouton retour au menu */
+        #backToMenu {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 50;
+            pointer-events: auto;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI Jeu -->
+        <div id="ui" class="ui-layer">
+            <div>💰 Pièces: <span id="score">0</span>/10</div>
+            <div id="livesContainer">❤️ Vies: <span id="lives">3</span></div>
+        </div>
+        <div id="assistantStatus" class="ui-layer">🤖 Nano: <span id="assistantReady">PRÊT</span></div>
+        <div id="message"></div>
+        <button id="backToMenu">⬅ Menu Principal</button>
+
+        <!-- Menu Principal -->
+        <div id="mainMenu">
+            <div class="menu-title">SUPER LÉO</div>
+            <div class="menu-subtitle">Sauveur de la Planète</div>
+            
+            <button class="mode-btn mode-relax" onclick="startGame('relax')">
+                🧘 Mode Détendu
+                <span class="mode-desc">Vies infinies • Pas de Game Over • Nano toujours actif</span>
+            </button>
+            
+            <button class="mode-btn mode-classic" onclick="startGame('classic')">
+                ⚔️ Mode Classique
+                <span class="mode-desc">3 Vies • Défi intense • Temps de recharge Nano</span>
+            </button>
+        </div>
+
+        <!-- Contrôles Roblox -->
+        <div class="joystick-zone" id="joystickZone">
+            <div class="joystick-base">
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+        </div>
+        <div class="jump-btn" id="jumpBtn">↑</div>
+    </div>
+
+    <script>
+        // === CONFIGURATION ===
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const livesContainer = document.getElementById('livesContainer');
+        const messageEl = document.getElementById('message');
+        const assistantStatusEl = document.getElementById('assistantReady');
+        const mainMenu = document.getElementById('mainMenu');
+        const backToMenuBtn = document.getElementById('backToMenu');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initLevel(); // Recalculer les plateformes
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // === ÉTAT DU JEU ===
+        let gameState = 'menu'; // menu, playing, won, lost
+        let gameMode = 'classic'; // classic, relax
+        let score = 0;
+        let lives = 3;
+        let assistantCooldown = 0;
+        const ASSISTANT_COOLDOWN_TIME = 5000; 
+        let isBeingRescued = false;
+
+        // === SUPER LÉO ===
+        const leo = {
+            x: 50,
+            y: 350,
+            width: 40,
+            height: 50,
+            vx: 0,
+            vy: 0,
+            speed: 6,
+            jumpPower: -16,
+            grounded: false,
+            color: '#00d4ff',
+            glowColor: '#00ffff'
+        };
+
+        const gravity = 0.7;
+        const friction = 0.85;
+
+        // === NIVEAU (Plateformes, Pièces, Obstacles) ===
+        let platforms = [], coins = [], obstacles = [];
+
+        function initLevel() {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            // Plateformes relatives
+            platforms = [
+                { x: 0, y: h - 50, width: w, height: 50, color: '#2d5016' },
+                { x: w * 0.25, y: h * 0.65, width: w * 0.2, height: 20, color: '#5d4037' },
+                { x: w * 0.55, y: h * 0.55, width: w * 0.15, height: 20, color: '#5d4037' },
+                { x: w * 0.1, y: h * 0.4, width: w * 0.15, height: 20, color: '#5d4037' },
+                { x: w * 0.75, y: h * 0.4, width: w * 0.15, height: 20, color: '#5d4037' },
+                { x: w * 0.4, y: h * 0.25, width: w * 0.2, height: 20, color: '#5d4037' }
+            ];
+
+            // Pièces aléatoires
+            coins = [];
+            for (let i = 0; i < 10; i++) {
+                coins.push({
+                    x: w * 0.1 + Math.random() * w * 0.8,
+                    y: h * 0.2 + Math.random() * h * 0.6,
+                    size: 12,
+                    collected: false,
+                    floatOffset: Math.random() * Math.PI * 2
+                });
+            }
+
+            // Obstacles
+            obstacles = [
+                { x: w * 0.3, y: h - 80, width: 40, height: 30, color: '#ff4444', speed: 2, direction: 1 },
+                { x: w * 0.6, y: h - 80, width: 40, height: 30, color: '#ff4444', speed: 3, direction: -1 },
+                { x: w * 0.2, y: h * 0.6, width: 30, height: 30, color: '#ff6600', speed: 1.5, direction: 1 },
+                { x: w * 0.8, y: h * 0.4, width: 30, height: 30, color: '#ff6600', speed: 2, direction: -1 }
+            ];
+        }
+
+        // === ASSISTANT NANO ===
+        const nano = {
+            x: 0, y: 0, radius: 15,
+            color: '#00ff88', glowColor: '#00ffaa',
+            orbitAngle: 0, orbitRadius: 100,
+            orbitCenterX: 0, orbitCenterY: 0,
+            rescueMode: false
+        };
+
+        // === CONTRÔLES ROBLOX ===
+        let input = { left: false, right: false, jump: false };
+        let joystickData = { active: false, startX: 0, startY: 0 };
+
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickStick = document.getElementById('joystickStick');
+        const jumpBtn = document.getElementById('jumpBtn');
+
+        // Joystick Logic
+        joystickZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            const rect = joystickZone.getBoundingClientRect();
+            joystickData.active = true;
+            joystickData.startX = rect.left + rect.width / 2;
+            joystickData.startY = rect.top + rect.height / 2;
+            updateJoystick(touch.clientX, touch.clientY);
+        });
+
+        joystickZone.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (joystickData.active) {
+                const touch = e.changedTouches[0];
+                updateJoystick(touch.clientX, touch.clientY);
+            }
+        });
+
+        const endJoystick = (e) => {
+            e.preventDefault();
+            joystickData.active = false;
+            input.left = false;
+            input.right = false;
+            joystickStick.style.transform = `translate(-50%, -50%)`;
+        };
+        joystickZone.addEventListener('touchend', endJoystick);
+        joystickZone.addEventListener('touchcancel', endJoystick);
+
+        function updateJoystick(clientX, clientY) {
+            const maxDist = 35;
+            let dx = clientX - joystickData.startX;
+            let dy = clientY - joystickData.startY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist > maxDist) {
+                const ratio = maxDist / dist;
+                dx *= ratio;
+                dy *= ratio;
+            }
+
+            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+            if (dx < -10) { input.left = true; input.right = false; }
+            else if (dx > 10) { input.right = true; input.left = false; }
+            else { input.left = false; input.right = false; }
+        }
+
+        // Jump Button
+        const doJump = () => {
+            if (leo.grounded && gameState === 'playing' && !isBeingRescued) {
+                leo.vy = leo.jumpPower;
+                leo.grounded = false;
+            }
+        };
+        jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); });
+        jumpBtn.addEventListener('mousedown', (e) => { e.preventDefault(); doJump(); });
+
+        // Clavier (Debug PC)
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'Space') doJump();
+            if (e.code === 'KeyR' && gameState !== 'playing') resetGame();
+            if (e.code === 'Escape') showMainMenu();
+        });
+        document.addEventListener('keyup', (e) => keys[e.code] = false);
+
+        // === GESTION DU JEU ===
+        function startGame(mode) {
+            gameMode = mode;
+            mainMenu.style.display = 'none';
+            backToMenuBtn.style.display = 'block';
+            livesContainer.style.display = mode === 'classic' ? 'block' : 'none';
+            resetGame();
+        }
+
+        function showMainMenu() {
+            gameState = 'menu';
+            mainMenu.style.display = 'flex';
+            backToMenuBtn.style.display = 'none';
+            messageEl.style.display = 'none';
+        }
+
+        function resetGame() {
+            leo.x = canvas.width * 0.1;
+            leo.y = canvas.height * 0.7;
+            leo.vx = 0;
+            leo.vy = 0;
+            score = 0;
+            lives = 3;
+            gameState = 'playing';
+            isBeingRescued = false;
+            assistantCooldown = 0;
+            messageEl.style.display = 'none';
+            scoreEl.textContent = score;
+            livesEl.textContent = lives;
+            assistantStatusEl.textContent = 'PRÊT';
+            assistantStatusEl.style.color = '#00ff88';
+            
+            coins.forEach(c => c.collected = false);
+            initLevel();
+        }
+
+        function showMessage(text, color) {
+            messageEl.innerHTML = text;
+            messageEl.style.color = color;
+            messageEl.style.display = 'block';
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        function tryRescue() {
+            if (isBeingRescued) return false;
+            
+            // En mode détendu, Nano est toujours prêt. En classique, il y a un cooldown.
+            if (gameMode === 'classic' && assistantCooldown > 0) return false;
+            
+            if (leo.y > canvas.height - 50 && leo.vy > 0) {
+                isBeingRescued = true;
+                if (gameMode === 'classic') {
+                    assistantCooldown = ASSISTANT_COOLDOWN_TIME;
+                    assistantStatusEl.textContent = 'EN CHARGE';
+                    assistantStatusEl.style.color = '#ffaa00';
+                } else {
+                    assistantStatusEl.textContent = 'SAUVETAGE';
+                    assistantStatusEl.style.color = '#00ff88';
+                }
+                nano.rescueMode = true;
+                return true;
+            }
+            return false;
+        }
+
+        function completeRescue() {
+            leo.y = canvas.height * 0.7;
+            leo.x = canvas.width * 0.1;
+            leo.vy = 0;
+            leo.vx = 0;
+            isBeingRescued = false;
+            nano.rescueMode = false;
+            
+            if (gameMode === 'classic') {
+                assistantStatusEl.textContent = 'RECHARGEMENT...';
+                assistantStatusEl.style.color = '#ffaa00';
+            }
+        }
+
+        // === BOUCLE PRINCIPALE ===
+        function update() {
+            if (gameState !== 'playing') return;
+
+            // Cooldown assistant
+            if (gameMode === 'classic' && assistantCooldown > 0) {
+                assistantCooldown -= 16;
+                if (assistantCooldown <= 0) {
+                    assistantCooldown = 0;
+                    assistantStatusEl.textContent = 'PRÊT';
+                    assistantStatusEl.style.color = '#00ff88';
+                }
+            }
+
+            // Sauvetage
+            if (isBeingRescued) {
+                leo.y -= 3;
+                leo.vy = 0;
+                if (nano.y > 50) {
+                    nano.y -= 2;
+                } else {
+                    completeRescue();
+                }
+                return;
+            }
+
+            if (tryRescue()) return;
+
+            // Mouvement
+            if (input.left || keys['ArrowLeft']) leo.vx = -leo.speed;
+            else if (input.right || keys['ArrowRight']) leo.vx = leo.speed;
+            else leo.vx *= friction;
+
+            leo.vy += gravity;
+            leo.x += leo.vx;
+            leo.y += leo.vy;
+
+            // Limites
+            if (leo.x < 0) leo.x = 0;
+            if (leo.x + leo.width > canvas.width) leo.x = canvas.width - leo.width;
+
+            // Collisions plateformes
+            leo.grounded = false;
+            platforms.forEach(platform => {
+                if (checkCollision(leo, platform)) {
+                    if (leo.vy > 0 && leo.y + leo.height - leo.vy <= platform.y) {
+                        leo.y = platform.y - leo.height;
+                        leo.vy = 0;
+                        leo.grounded = true;
+                    }
+                }
+            });
+
+            // Chute
+            if (leo.y > canvas.height) {
+                if (gameMode === 'relax') {
+                    // Mode détente : respawn immédiat sans perte
+                    leo.x = canvas.width * 0.1;
+                    leo.y = canvas.height * 0.7;
+                    leo.vy = 0;
+                } else {
+                    lives--;
+                    livesEl.textContent = lives;
+                    if (lives <= 0) {
+                        gameState = 'lost';
+                        showMessage("💀 Super Léo a échoué...<br><small>Appuie sur Retour au menu</small>", '#ff4444');
+                    } else {
+                        leo.x = canvas.width * 0.1;
+                        leo.y = canvas.height * 0.7;
+                        leo.vy = 0;
+                    }
+                }
+            }
+
+            // Pièces
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    const dx = (leo.x + leo.width/2) - coin.x;
+                    const dy = (leo.y + leo.height/2) - coin.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < leo.width/2 + coin.size) {
+                        coin.collected = true;
+                        score++;
+                        scoreEl.textContent = score;
+                        if (score >= 10) {
+                            gameState = 'won';
+                            showMessage("🌍 MISSION ACCOMPLIE!<br>Super Léo a sauvé la planète!<br><small>Bravo !</small>", '#00ff00');
+                        }
+                    }
+                }
+            });
+
+            // Obstacles
+            obstacles.forEach(obstacle => {
+                obstacle.x += obstacle.speed * obstacle.direction;
+                if (obstacle.x <= 0 || obstacle.x + obstacle.width >= canvas.width) obstacle.direction *= -1;
+
+                if (checkCollision(leo, obstacle)) {
+                    if (gameMode === 'relax') {
+                        // Repousse juste Léo
+                        leo.vx = -5;
+                        leo.vy = -5;
+                    } else {
+                        lives--;
+                        livesEl.textContent = lives;
+                        if (lives <= 0) {
+                            gameState = 'lost';
+                            showMessage("💀 Super Léo a échoué...<br><small>Appuie sur Retour au menu</small>", '#ff4444');
+                        } else {
+                            leo.x = canvas.width * 0.1;
+                            leo.y = canvas.height * 0.7;
+                            leo.vy = 0;
+                        }
+                    }
+                }
+            });
+
+            // Nano
+            if (!nano.rescueMode) {
+                nano.orbitAngle += 0.02;
+                nano.x = canvas.width * 0.5 + Math.cos(nano.orbitAngle) * 100;
+                nano.y = canvas.height * 0.5 + Math.sin(nano.orbitAngle) * 60;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Fond
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 37) % canvas.width;
+                const y = (i * 53) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Plateformes
+            platforms.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.width, p.height);
+                ctx.strokeStyle = '#3d2817';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(p.x, p.y, p.width, p.height);
+            });
+
+            // Pièces
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    const floatY = Math.sin(Date.now() / 500 + coin.floatOffset) * 5;
+                    ctx.save();
+                    ctx.translate(coin.x, coin.y + floatY);
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#ffd700';
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, coin.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffaa00';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#b8860b';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('$', 0, 1);
+                    ctx.restore();
+                }
+            });
+
+            // Obstacles
+            obstacles.forEach(obs => {
+                ctx.fillStyle = obs.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = obs.color;
+                ctx.beginPath();
+                ctx.arc(obs.x + obs.width/2, obs.y + obs.height/2, obs.width/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(obs.x + 10, obs.y + 10, 5, 0, Math.PI * 2);
+                ctx.arc(obs.x + 30, obs.y + 10, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(obs.x + 10, obs.y + 10, 2, 0, Math.PI * 2);
+                ctx.arc(obs.x + 30, obs.y + 10, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Nano
+            ctx.save();
+            ctx.translate(nano.x, nano.y);
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = nano.glowColor;
+            ctx.fillStyle = nano.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, nano.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, nano.radius + 5, Date.now() / 200, Date.now() / 200 + Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            ctx.shadowBlur = 0;
+
+            // Faisceau de sauvetage
+            if (isBeingRescued) {
+                ctx.save();
+                ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 100) * 0.2;
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(nano.x, nano.y);
+                ctx.lineTo(leo.x + leo.width/2, leo.y + leo.height/2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Léo
+            ctx.save();
+            ctx.translate(leo.x + leo.width/2, leo.y + leo.height/2);
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = leo.glowColor;
+            ctx.fillStyle = leo.color;
+            ctx.fillRect(-leo.width/2, -leo.height/2, leo.width, leo.height);
+            ctx.fillStyle = '#ff0066';
+            ctx.beginPath();
+            ctx.moveTo(-leo.width/2, -leo.height/2 + 10);
+            ctx.lineTo(-leo.width/2 - 15, -leo.height/2 + 30);
+            ctx.lineTo(-leo.width/2 + 5, -leo.height/2 + 30);
+            ctx.fill();
+            ctx.fillStyle = '#ffccaa';
+            ctx.fillRect(-15, -20, 30, 20);
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(-7, -15, 6, 0, Math.PI * 2);
+            ctx.arc(7, -15, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(-7, -15, 3, 0, Math.PI * 2);
+            ctx.arc(7, -15, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, -5, 8, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+            ctx.restore();
+            ctx.shadowBlur = 0;
+
+            if (gameState !== 'playing') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        backToMenuBtn.addEventListener('click', showMainMenu);
+
+        // Initialisation
+        resizeCanvas();
+        gameLoop();
+    </script>
+</body>
+</html>
